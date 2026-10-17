@@ -50,7 +50,7 @@ export function ThemePicker() {
         style={{ width: 'auto', padding: '0 10px', gap: 6, fontSize: 13 }}
       >
         <Palette size={14} />
-        <span style={{ display: 'none', '@media(min-width:768px)': { display: 'inline' } } as React.CSSProperties}>
+        <span style={{ fontSize: 13 }}>
           Theme
         </span>
       </button>
