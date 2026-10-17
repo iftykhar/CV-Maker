@@ -1,103 +1,139 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { EditorPanel } from '@/components/editor/EditorPanel';
+import { CVPreview } from '@/components/preview/CVPreview';
+import { ThemePicker } from '@/components/preview/ThemePicker';
+import { useCVStore } from '@/store/useCVStore';
+import {
+  FileText,
+  Undo2,
+  Redo2,
+  RotateCcw,
+  Edit3,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+
+const PDFDownloadButton = dynamic(
+  () => import('@/components/pdf/PDFDownloadButton'),
+  { ssr: false, loading: () => <button className="btn btn-primary btn-sm" disabled>Export PDF</button> }
+);
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { cvTitle, setCvTitle, undo, redo, canUndo, canRedo, resetToDefault } =
+    useCVStore();
+  const [editorCollapsed, setEditorCollapsed] = useState(false);
+  const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <div className="app-shell">
+      {/* ── Navbar ── */}
+      <header className="navbar">
+        <div className="navbar-left">
+          <div className="logo">
+            <FileText size={18} />
+            <span>CV Maker</span>
+          </div>
+          <input
+            id="cv-title"
+            className="cv-title-input"
+            value={cvTitle}
+            onChange={(e) => setCvTitle(e.target.value)}
+            placeholder="Untitled Resume"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <div className="navbar-center">
+          <div className="mobile-tabs">
+            <button
+              id="tab-editor"
+              className={`mobile-tab ${mobileView === 'editor' ? 'active' : ''}`}
+              onClick={() => setMobileView('editor')}
+            >
+              <Edit3 size={13} /> Editor
+            </button>
+            <button
+              id="tab-preview"
+              className={`mobile-tab ${mobileView === 'preview' ? 'active' : ''}`}
+              onClick={() => setMobileView('preview')}
+            >
+              <Eye size={13} /> Preview
+            </button>
+          </div>
+        </div>
+
+        <div className="navbar-right">
+          <button
+            id="btn-undo"
+            className="icon-btn"
+            onClick={undo}
+            disabled={!canUndo()}
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 size={15} />
+          </button>
+          <button
+            id="btn-redo"
+            className="icon-btn"
+            onClick={redo}
+            disabled={!canRedo()}
+            title="Redo (Ctrl+Y)"
+          >
+            <Redo2 size={15} />
+          </button>
+          <button
+            id="btn-reset"
+            className="icon-btn danger"
+            onClick={() => {
+              if (confirm('Reset to default resume? All changes will be lost.'))
+                resetToDefault();
+            }}
+            title="Reset to default"
+          >
+            <RotateCcw size={15} />
+          </button>
+          <ThemePicker />
+          <PDFDownloadButton />
+        </div>
+      </header>
+
+      {/* ── Main ── */}
+      <div className="main-content">
+        <aside
+          className={`editor-sidebar${editorCollapsed ? ' collapsed' : ''}${
+            mobileView !== 'editor' ? ' mobile-hidden' : ''
+          }`}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <EditorPanel />
+          <button
+            className="collapse-btn"
+            onClick={() => setEditorCollapsed((p) => !p)}
+            title={editorCollapsed ? 'Expand editor' : 'Collapse editor'}
+          >
+            {editorCollapsed ? (
+              <ChevronRight size={14} />
+            ) : (
+              <ChevronLeft size={14} />
+            )}
+          </button>
+        </aside>
+
+        <main
+          className={`preview-area${
+            mobileView !== 'preview' ? ' mobile-hidden' : ''
+          }`}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <div className="preview-toolbar">
+            <Eye size={13} /> Live Preview · A4 Format
+          </div>
+          <div className="preview-paper">
+            <CVPreview />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
